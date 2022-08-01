@@ -44,7 +44,7 @@ func main() {
 		artistsMap[record[1]] = shellescape.Quote(record[1])
 	}
 
-	commandFormat := "tidal-dl -s \"%s\""
+	commandFormat := "tidal-dl -s %s"
 	//commandFormat := "echo %s"
 
 	log.Println("loop")
