@@ -41,13 +41,15 @@ func main() {
 			log.Fatal(err)
 		}
 
+		if record[1] == "Artist Name" {
+			continue
+		}
+
 		artistsMap[record[1]] = shellescape.Quote(record[1])
 	}
 
 	commandFormat := "tidal-dl -s %s"
 	//commandFormat := "echo %s"
-
-	log.Println("loop")
 
 	failed := []string{}
 	for _, artist := range artistsMap {
