@@ -51,7 +51,6 @@ func main() {
 	}
 
 	commandFormat := "tidal-dl -s %s"
-	//commandFormat := "echo %s"
 
 	failed := []string{}
 	for _, artist := range artistsMap {

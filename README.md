@@ -9,3 +9,4 @@ downloads the entire  discography using the artist's name
   - Propper parsing of args
 - Add file logging to file
 - Beets integration to automatically run it when done with downloading
+- Create docker image with the forked version of tidal-dl
