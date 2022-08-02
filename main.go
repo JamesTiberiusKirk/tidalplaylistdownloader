@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"time"
 
 	"github.com/alessio/shellescape"
 )
@@ -61,6 +62,9 @@ func main() {
 			log.Println(cmd.String())
 			log.Print(err)
 		}
+
+		// Sleep for two seconds to not spam the api
+		time.Sleep(2 * time.Second)
 	}
 
 	log.Print("Failed artists")
