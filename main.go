@@ -3,11 +3,13 @@ package main
 import (
 	"bufio"
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/alessio/shellescape"
@@ -53,8 +55,14 @@ func main() {
 	commandFormat := "tidal-dl -s %s"
 
 	failed := []string{}
+	artistsAmount := len(artistsMap)
+	counter := 0
+
 	for _, artist := range artistsMap {
+		counter++
+
 		log.Printf("Artist: %s", artist)
+		log.Printf("%d out of %d", counter, artistsAmount)
 
 		cmd := exec.Command("bash", "-c", fmt.Sprintf(commandFormat, artist))
 
@@ -63,27 +71,63 @@ func main() {
 			failed = append(failed, artist)
 			log.Printf("CMD: %s", cmd.String())
 			log.Printf("Error in STD out pipe: %s", err)
-			return
+			err = writeLog("/mnt/3TB/failedLog.txt", artist)
+			if err != nil {
+				log.Fatalf("Error writting log %s", err.Error())
+			}
 		}
 
 		cmd.Start()
-		go print(stdout)
+		err = print(stdout)
+		if err != nil {
+			failed = append(failed, artist)
+			log.Printf("CMD: %s", cmd.String())
+			log.Printf("Error in STD out pipe: %s", err)
+			err = writeLog("/mnt/3TB/failedLog.txt", artist)
+			if err != nil {
+				log.Fatalf("Error writting log %s", err.Error())
+			}
+		}
 		cmd.Wait()
 
-		// Sleep for two seconds to not spam the api
-		time.Sleep(2 * time.Second)
+		// Sleep for 5 seconds to not spam the api
+		time.Sleep(5 * time.Second)
 	}
 
 	log.Print("Failed artists:")
 	log.Print(failed)
 }
 
-// to print the processed information when stdout gets a new line
-func print(stdout io.ReadCloser) {
-	r := bufio.NewReader(stdout)
-	line, _, err := r.ReadLine()
-	fmt.Printf("\t%s\n", string(line))
+func writeLog(path string, failedArtists string) error {
+	failedLogFile, err := os.OpenFile(path, os.O_RDWR|os.O_APPEND, 0660)
 	if err != nil {
-		log.Printf("\tERROR: %s", err.Error())
+		return err
 	}
+
+	defer failedLogFile.Close()
+
+	failedLogFile.WriteString(failedArtists)
+	return nil
+}
+
+func print(stdout io.ReadCloser) error {
+	r := bufio.NewReader(stdout)
+
+	for {
+		line, _, err := r.ReadLine()
+		if err != nil {
+			log.Printf("\tERROR: %s", err.Error())
+			return nil
+		}
+
+		if line == nil {
+			return nil
+		}
+		fmt.Printf("\t%s\n", string(line))
+
+		if strings.Contains(string(line), "ERR") {
+			return errors.New("Err with this artist")
+		}
+	}
+	return nil
 }
